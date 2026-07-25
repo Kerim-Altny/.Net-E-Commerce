@@ -1,6 +1,47 @@
-@ECommerce.API_HostAddress = http://localhost:5003
-
-GET {{ECommerce.API_HostAddress}}/weatherforecast/
+### 1) Token yok -> [Authorize(Roles = "Admin")] nedeniyle 401 bekleniyor
+GET http://localhost:5003/weatherforecast/
 Accept: application/json
 
-###
+### 2) Yeni bir Customer kaydı oluştur
+POST http://localhost:5003/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "customer1@example.com",
+  "password": "Customer123!",
+  "fullName": "Test Customer",
+  "streetAddress": "Test Street 1",
+  "city": "Istanbul",
+  "state": "Istanbul",
+  "postalCode": "34000"
+}
+
+### 3) Customer olarak login ol, token'ı yakala
+# @name customerLogin
+POST http://localhost:5003/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "customer1@example.com",
+  "password": "Customer123!"
+}
+
+### 4) Customer token'ıyla admin-only endpoint -> 403 bekleniyor (rol yetersiz)
+GET http://localhost:5003/weatherforecast/
+Accept: application/json
+Authorization: Bearer {{customerLogin.response.body.$.token}}
+
+### 5) Seed edilmiş admin ile login ol, token'ı yakala
+# @name adminLogin
+POST http://localhost:5003/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "<SeedAdmin:Password değerini user-secrets'ten al ve buraya yaz — commit etme>"
+}
+
+### 6) Admin token'ıyla admin-only endpoint -> 200 ve veri bekleniyor
+GET http://localhost:5003/weatherforecast/
+Accept: application/json
+Authorization: Bearer {{adminLogin.response.body.$.token}}
