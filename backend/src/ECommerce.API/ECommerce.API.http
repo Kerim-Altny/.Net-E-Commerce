@@ -45,3 +45,80 @@ Content-Type: application/json
 GET http://localhost:5003/weatherforecast/
 Accept: application/json
 Authorization: Bearer {{adminLogin.response.body.$.token}}
+
+### 7) Token yok -> kategori oluşturma 401 bekleniyor
+POST http://localhost:5003/api/categories
+Content-Type: application/json
+
+{
+  "name": "Fiction",
+  "displayOrder": 1
+}
+
+### 8) Admin ile kategori oluştur, id'yi yakala
+# @name createCategory
+POST http://localhost:5003/api/categories
+Content-Type: application/json
+Authorization: Bearer {{adminLogin.response.body.$.token}}
+
+{
+  "name": "Fiction",
+  "displayOrder": 1
+}
+
+### 9) Tüm kategorileri listele (herkese açık)
+GET http://localhost:5003/api/categories
+Accept: application/json
+
+### 10) Admin ile bu kategoride bir ürün oluştur, id'yi yakala
+# @name createProduct
+POST http://localhost:5003/api/products
+Content-Type: application/json
+Authorization: Bearer {{adminLogin.response.body.$.token}}
+
+{
+  "title": "The Great Gatsby",
+  "author": "F. Scott Fitzgerald",
+  "isbn": "9780743273565",
+  "description": "A classic novel",
+  "imageUrl": "",
+  "listPrice": 15.99,
+  "price": 9.99,
+  "price50": 9.49,
+  "price100": 8.99,
+  "categoryId": {{createCategory.response.body.$.id}}
+}
+
+### 11) Ürünleri sayfalı listele (herkese açık) -> Home.tsx'teki shape ile karşılaştır
+GET http://localhost:5003/api/products?pageNumber=1&pageSize=10
+Accept: application/json
+
+### 12) Kategoriye göre filtrelenmiş liste
+GET http://localhost:5003/api/products?categoryId={{createCategory.response.body.$.id}}
+Accept: application/json
+
+### 13) Id ile tek ürün getir
+GET http://localhost:5003/api/products/{{createProduct.response.body.$.id}}
+Accept: application/json
+
+### 14) Ürün arama
+GET http://localhost:5003/api/products/search?term=Gatsby
+Accept: application/json
+
+### 15) Admin ile ürünü güncelle
+PUT http://localhost:5003/api/products/{{createProduct.response.body.$.id}}
+Content-Type: application/json
+Authorization: Bearer {{adminLogin.response.body.$.token}}
+
+{
+  "title": "The Great Gatsby (Updated)",
+  "author": "F. Scott Fitzgerald",
+  "isbn": "9780743273565",
+  "description": "A classic novel - updated",
+  "imageUrl": "",
+  "listPrice": 15.99,
+  "price": 9.99,
+  "price50": 9.49,
+  "price100": 8.99,
+  "categoryId": {{createCategory.response.body.$.id}}
+}
