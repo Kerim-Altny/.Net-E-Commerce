@@ -122,3 +122,55 @@ Authorization: Bearer {{adminLogin.response.body.$.token}}
   "price100": 8.99,
   "categoryId": {{createCategory.response.body.$.id}}
 }
+
+### 16) Token yok -> sepet görüntüleme 401 bekleniyor
+GET http://localhost:5003/api/cart
+Accept: application/json
+
+### 17) Customer token ile sepete ürün ekle (2 adet)
+POST http://localhost:5003/api/cart/items
+Content-Type: application/json
+Authorization: Bearer {{customerLogin.response.body.$.token}}
+
+{
+  "productId": {{createProduct.response.body.$.id}},
+  "quantity": 2
+}
+
+### 18) Aynı ürünü tekrar ekle (3 adet daha) -> aynı satırda quantity 5 olmalı, ikinci bir satır açılmamalı
+POST http://localhost:5003/api/cart/items
+Content-Type: application/json
+Authorization: Bearer {{customerLogin.response.body.$.token}}
+
+{
+  "productId": {{createProduct.response.body.$.id}},
+  "quantity": 3
+}
+
+### 19) Sepeti görüntüle -> tek CartItem, quantity 5, unitPrice = 9.99 (1-50 aralığı, "price")
+GET http://localhost:5003/api/cart
+Accept: application/json
+Authorization: Bearer {{customerLogin.response.body.$.token}}
+
+### 20) Quantity'yi 60'a güncelle -> 51-100 aralığına geçmeli
+PUT http://localhost:5003/api/cart/items/{{createProduct.response.body.$.id}}
+Content-Type: application/json
+Authorization: Bearer {{customerLogin.response.body.$.token}}
+
+{
+  "quantity": 60
+}
+
+### 21) Sepeti tekrar görüntüle -> unitPrice artık 9.49 (price50) olmalı
+GET http://localhost:5003/api/cart
+Accept: application/json
+Authorization: Bearer {{customerLogin.response.body.$.token}}
+
+### 22) Ürünü sepetten sil
+DELETE http://localhost:5003/api/cart/items/{{createProduct.response.body.$.id}}
+Authorization: Bearer {{customerLogin.response.body.$.token}}
+
+### 23) Sepeti tekrar görüntüle -> items boş, total 0 olmalı
+GET http://localhost:5003/api/cart
+Accept: application/json
+Authorization: Bearer {{customerLogin.response.body.$.token}}
