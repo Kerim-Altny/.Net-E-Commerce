@@ -1,6 +1,7 @@
 using ECommerce.Application.DTOs.Categories;
 
 namespace ECommerce.Application.Services.Categories;
+
 public interface ICategoryService
 {
     Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync();

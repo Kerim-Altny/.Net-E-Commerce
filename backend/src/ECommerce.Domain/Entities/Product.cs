@@ -19,4 +19,18 @@ public class Product
 
     [ForeignKey("CategoryId")]
     public required Category Category { get; set; }
+
+    public decimal GetUnitPrice(int quantity)
+    {
+        if (quantity <= 50)
+        {
+            return Price;
+        }
+        else if (quantity <= 100)
+        {
+            return Price50;
+        }
+        return Price100;
+
+    }
 }

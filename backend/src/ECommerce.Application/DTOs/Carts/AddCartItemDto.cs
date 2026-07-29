@@ -1,6 +1,3 @@
 namespace ECommerce.Application.DTOs.Carts;
-public class AddCartItemDto
-{
-    public int ProductId { get; set; }
-    public int Quantity { get; set; }
-}
+
+public sealed record AddCartItemDto(int ProductId, int Quantity);

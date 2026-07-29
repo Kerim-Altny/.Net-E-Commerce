@@ -2,6 +2,7 @@ using ECommerce.Application.DTOs.Categories;
 using ECommerce.Application.DTOs.Products;
 
 namespace ECommerce.Application.Services.Products;
+
 public class ProductService : IProductService
 {
     private readonly IProductRepository _productRepository;
@@ -18,7 +19,7 @@ public class ProductService : IProductService
         var products = await _productRepository.GetPagedAsync(pageNumber, pageSize, categoryId);
         return products.Select(p => new ProductDto(p.Id, p.Title, p.Author, p.Isbn, p.Description, p.ImageUrl, p.ListPrice, p.Price, p.Price50, p.Price100, new CategoryDto(p.Category.Id, p.Category.Name, p.Category.DisplayOrder)));
     }
-    
+
 
     public async Task<IEnumerable<ProductDto>> SearchProductsAsync(string searchTerm)
     {
@@ -33,7 +34,7 @@ public class ProductService : IProductService
         {
             throw new KeyNotFoundException($"Product with ID {id} not found.");
         }
-        return new ProductDto(product.Id, product.Title, product.Author, product.Isbn, product.Description, product.ImageUrl, product.ListPrice, product.Price, product.Price50, product.Price100, new CategoryDto(product.Category.Id, product.Category.Name,product.Category.DisplayOrder));
+        return new ProductDto(product.Id, product.Title, product.Author, product.Isbn, product.Description, product.ImageUrl, product.ListPrice, product.Price, product.Price50, product.Price100, new CategoryDto(product.Category.Id, product.Category.Name, product.Category.DisplayOrder));
     }
 
     public async Task<ProductDto> CreateProductAsync(CreateProductDto createProductDto)

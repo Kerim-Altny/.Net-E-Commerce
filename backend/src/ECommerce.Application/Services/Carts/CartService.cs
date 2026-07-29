@@ -7,23 +7,11 @@ public class CartService : ICartService
     private readonly ICartRepository _cartRepository;
     private readonly IProductRepository _productRepository;
 
+
     public CartService(ICartRepository cartRepository, IProductRepository productRepository)
     {
         _cartRepository = cartRepository;
         _productRepository = productRepository;
-    }
-    private static decimal GetUnitPrice(Product product, int quantity)
-    {
-        if (quantity <= 50)
-        {
-            return product.Price;
-        }
-        else if (quantity <= 100)
-        {
-            return product.Price50;
-        }
-        return product.Price100;
-
     }
     private static CartDto MapToCartDto(Cart cart)
     {
@@ -36,7 +24,7 @@ public class CartService : ICartService
                 ProductId = ci.ProductId,
                 ProductTitle = ci.Product.Title,
                 ImageUrl = ci.Product.ImageUrl,
-                UnitPrice = GetUnitPrice(ci.Product, ci.Quantity),
+                UnitPrice = ci.Product.GetUnitPrice(ci.Quantity),
                 Quantity = ci.Quantity
             }).ToList()
         };

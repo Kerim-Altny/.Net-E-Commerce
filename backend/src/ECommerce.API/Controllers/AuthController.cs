@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ECommerce.Application.DTOs.Auth;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
+namespace ECommerce.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

@@ -10,7 +10,7 @@ public class CartRepository : ICartRepository
         _context = context;
     }
 
-   public async Task AddAsync (Cart entity)
+    public async Task AddAsync(Cart entity)
     {
         await _context.Carts.AddAsync(entity);
     }

@@ -59,5 +59,5 @@ public class ProductRepository : IProductRepository
         }
 
         return await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-}
+    }
 }

@@ -1,5 +1,6 @@
 using ECommerce.Application.DTOs.Products;
 namespace ECommerce.Application.Services.Products;
+
 public interface IProductService
 {
     Task<IEnumerable<ProductDto>> GetAllProductsAsync(int pageNumber, int pageSize, int? categoryId);

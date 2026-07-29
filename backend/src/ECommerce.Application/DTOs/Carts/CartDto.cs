@@ -1,4 +1,5 @@
 namespace ECommerce.Application.DTOs.Carts;
+
 public class CartDto
 {
     public int Id { get; set; }

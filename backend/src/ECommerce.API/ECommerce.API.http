@@ -174,3 +174,33 @@ Authorization: Bearer {{customerLogin.response.body.$.token}}
 GET http://localhost:5003/api/cart
 Accept: application/json
 Authorization: Bearer {{customerLogin.response.body.$.token}}
+
+### 24) Checkout denemesi için sepete tekrar ürün ekle
+POST http://localhost:5003/api/cart/items
+Content-Type: application/json
+Authorization: Bearer {{customerLogin.response.body.$.token}}
+
+{
+  "productId": {{createProduct.response.body.$.id}},
+  "quantity": 2
+}
+
+### 25) Checkout başlat -> response'taki checkoutUrl'i kopyalayıp tarayıcıda aç
+# @name checkout
+POST http://localhost:5003/api/orders/checkout
+Content-Type: application/json
+Authorization: Bearer {{customerLogin.response.body.$.token}}
+
+{
+  "shippingFullName": "Test Customer",
+  "shippingPhoneNumber": "5551234567",
+  "shippingStreet": "Test Street 1",
+  "shippingCity": "Istanbul",
+  "shippingState": "Istanbul",
+  "shippingPostalCode": "34000"
+}
+
+### 26) Ödeme sonrası sepetin boşaldığını doğrula (webhook Paid yapıp ClearCart çağırdıysa)
+GET http://localhost:5003/api/cart
+Accept: application/json
+Authorization: Bearer {{customerLogin.response.body.$.token}}

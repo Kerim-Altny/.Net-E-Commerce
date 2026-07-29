@@ -1,6 +1,7 @@
 using ECommerce.Application.DTOs.Carts;
 
 namespace ECommerce.Application.Services.Carts;
+
 public interface ICartService
 {
     Task<CartDto> GetCartByUserIdAsync(string userId);

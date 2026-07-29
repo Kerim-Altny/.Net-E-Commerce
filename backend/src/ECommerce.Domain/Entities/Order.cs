@@ -1,6 +1,6 @@
 public class Order
 {
-    
+
     public int Id { get; set; }
     public required string UserId { get; set; }
     public DateTime OrderDate { get; set; }

@@ -15,11 +15,11 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<CartItem> CartItems => Set<CartItem>();
 
 
-     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
-          configurationBuilder.Properties<decimal>()
-            .HavePrecision(18, 2);
-        
+        configurationBuilder.Properties<decimal>()
+          .HavePrecision(18, 2);
+
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -61,5 +61,5 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             .HasIndex(ci => new { ci.CartId, ci.ProductId })
             .IsUnique();
     }
-   
+
 }
