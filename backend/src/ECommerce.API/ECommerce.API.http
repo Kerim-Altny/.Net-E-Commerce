@@ -204,3 +204,61 @@ Authorization: Bearer {{customerLogin.response.body.$.token}}
 GET http://localhost:5003/api/cart
 Accept: application/json
 Authorization: Bearer {{customerLogin.response.body.$.token}}
+
+### 27) Admin dashboard - customer token -> 403 bekleniyor (rol yetersiz)
+GET http://localhost:5003/api/admin/dashboard
+Accept: application/json
+Authorization: Bearer {{customerLogin.response.body.$.token}}
+
+### 28) Admin dashboard - admin token -> 200 ve toplam gelir/sipariş/kullanıcı/ürün + aylık trend + duruma göre dağılım + kategoriye göre ürün dağılımı bekleniyor
+GET http://localhost:5003/api/admin/dashboard
+Accept: application/json
+Authorization: Bearer {{adminLogin.response.body.$.token}}
+
+### 29) Admin sipariş listesi - filtre yok -> tüm siparişler (checkout'ta oluşan Pending sipariş dahil)
+GET http://localhost:5003/api/admin/orders
+Accept: application/json
+Authorization: Bearer {{adminLogin.response.body.$.token}}
+
+### 30) Admin sipariş listesi - status=Pending filtresi -> checkout'ta oluşan sipariş burada görünmeli, id'yi yakala
+# @name adminOrders
+GET http://localhost:5003/api/admin/orders?status=Pending
+Accept: application/json
+Authorization: Bearer {{adminLogin.response.body.$.token}}
+
+### 31) Sipariş durumu güncelle - customer token -> 403 bekleniyor (rol yetersiz)
+PUT http://localhost:5003/api/admin/orders/{{adminOrders.response.body.$[0].id}}/status
+Content-Type: application/json
+Authorization: Bearer {{customerLogin.response.body.$.token}}
+
+{
+  "newStatus": "Shipped"
+}
+
+### 32) Sipariş durumu güncelle - geçersiz status string -> 400 bekleniyor
+PUT http://localhost:5003/api/admin/orders/{{adminOrders.response.body.$[0].id}}/status
+Content-Type: application/json
+Authorization: Bearer {{adminLogin.response.body.$.token}}
+
+{
+  "newStatus": "NotARealStatus"
+}
+
+### 33) Sipariş durumu güncelle - admin token, geçerli status -> 200 ve status alanı "Shipped" dönmeli
+PUT http://localhost:5003/api/admin/orders/{{adminOrders.response.body.$[0].id}}/status
+Content-Type: application/json
+Authorization: Bearer {{adminLogin.response.body.$.token}}
+
+{
+  "newStatus": "Shipped"
+}
+
+### 34) Admin kullanıcı listesi - customer token -> 403 bekleniyor (rol yetersiz)
+GET http://localhost:5003/api/admin/users
+Accept: application/json
+Authorization: Bearer {{customerLogin.response.body.$.token}}
+
+### 35) Admin kullanıcı listesi - admin token -> 200, en az seed admin + customer1 dönmeli
+GET http://localhost:5003/api/admin/users
+Accept: application/json
+Authorization: Bearer {{adminLogin.response.body.$.token}}

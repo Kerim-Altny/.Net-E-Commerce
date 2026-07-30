@@ -93,5 +93,62 @@ public class OrderService : IOrderService
             await _cartService.ClearCartAsync(order.UserId);
         }
     }
+    public async Task<IEnumerable<OrderDto>> GetOrdersByStatusAsync(OrderStatus? status)
+    {
+        var orders = await _orderRepository.GetOrdersByStatusAsync(status);
+        return orders.Select(o => new OrderDto(
+            o.Id,
+            o.UserId,
+            o.OrderDate,
+            o.Status.ToString(),
+            o.TotalAmount,
+            o.ShippingFullName,
+            o.ShippingPhoneNumber,
+            o.ShippingStreet,
+            o.ShippingCity,
+            o.ShippingState,
+            o.ShippingPostalCode,
+            o.OrderItems.Select(oi => new OrderItemDto(
+                oi.Id,
+                oi.ProductId,
+                oi.ProductTitleSnapshot,
+                oi.UnitPriceAtPurchase,
+                oi.Quantity,
+                oi.UnitPriceAtPurchase * oi.Quantity
+            )).ToList()
+        ));
+    }
+    public async Task<OrderDto> UpdateOrderStatusAsync(int orderId, OrderStatus newStatus)
+    {
+        var order = await _orderRepository.GetByIdAsync(orderId);
+        if (order == null)
+        {
+            throw new KeyNotFoundException("Order not found.");
+        }
+        order.Status = newStatus;
+        _orderRepository.Update(order);
+        await _orderRepository.SaveChangesAsync();
+        return new OrderDto(
+            order.Id,
+            order.UserId,
+            order.OrderDate,
+            order.Status.ToString(),
+            order.TotalAmount,
+            order.ShippingFullName,
+            order.ShippingPhoneNumber,
+            order.ShippingStreet,
+            order.ShippingCity,
+            order.ShippingState,
+            order.ShippingPostalCode,
+            order.OrderItems.Select(oi => new OrderItemDto(
+                oi.Id,
+                oi.ProductId,
+                oi.ProductTitleSnapshot,
+                oi.UnitPriceAtPurchase,
+                oi.Quantity,
+                oi.UnitPriceAtPurchase * oi.Quantity
+            )).ToList()
+        );
+    }
 }
 

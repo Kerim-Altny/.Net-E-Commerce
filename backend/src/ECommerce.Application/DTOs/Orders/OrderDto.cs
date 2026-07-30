@@ -1,0 +1,1 @@
+public sealed record OrderDto(int Id, string UserId, DateTime OrderDate, string Status, decimal TotalAmount, string ShippingFullName, string ShippingPhoneNumber, string ShippingStreet, string ShippingCity, string ShippingState, string ShippingPostalCode, IReadOnlyList<OrderItemDto> Items);

@@ -60,4 +60,17 @@ public class ProductRepository : IProductRepository
 
         return await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
     }
+
+    public async Task<int> GetProductCountAsync()
+    {
+        return await _context.Products.CountAsync();
+    }
+
+    public async Task<Dictionary<string, int>> GetProductCountByCategoryAsync()
+    {
+        return await _context.Products
+            .GroupBy(p => p.Category.Name)
+            .Select(g => new { CategoryName = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.CategoryName, x => x.Count);
+    }
 }

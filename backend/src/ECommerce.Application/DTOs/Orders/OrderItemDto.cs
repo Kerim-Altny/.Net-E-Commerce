@@ -1,0 +1,1 @@
+public sealed record OrderItemDto(int Id,int ProductId, string ProductTitle, decimal UnitPrice, int Quantity, decimal LineTotal);

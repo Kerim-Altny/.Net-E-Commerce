@@ -70,4 +70,46 @@ public class OrderRepository : IOrderRepository
     {
         return _context.SaveChangesAsync();
     }
+
+    public async Task<decimal> GetTotalRevenueAsync()
+    {
+        return await _context.Orders
+            .Where(o => o.Status == OrderStatus.Paid)
+            .SumAsync(o => o.TotalAmount);
+    }
+
+    public async Task<int> GetOrderCountAsync()
+    {
+        return await _context.Orders.CountAsync();
+    }
+
+    public async Task<Dictionary<OrderStatus, int>> GetOrderCountByStatusAsync()
+    {
+        var counts = await _context.Orders
+            .GroupBy(o => o.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Status, x => x.Count);
+        return counts;
+    }
+
+    public async Task<IEnumerable<MonthlyRevenue>> GetMonthlyRevenueAsync(int months)
+    {
+        var startDate = DateTime.UtcNow.AddMonths(-months);
+        var revenues = await _context.Orders
+            .Where(o => o.Status == OrderStatus.Paid && o.OrderDate >= startDate)
+            .GroupBy(o => new { o.OrderDate.Year, o.OrderDate.Month })
+            .Select(g => new MonthlyRevenue(g.Key.Year, g.Key.Month, g.Sum(x => x.TotalAmount)))
+            .ToListAsync();
+        return revenues;
+    }
+
+    public async Task<IEnumerable<Order>> GetOrdersByStatusAsync(OrderStatus? status)
+    {
+        var query = _context.Orders.Include(o => o.OrderItems).ThenInclude(oi => oi.Product).AsQueryable();
+        if (status.HasValue)
+        {
+            query = query.Where(o => o.Status == status.Value);
+        }
+        return await query.ToListAsync();
+    }
 }
