@@ -8,6 +8,9 @@ using Microsoft.EntityFrameworkCore;
 using ECommerce.Infrastructure.Payments;
 using ECommerce.Application.Services.Orders;
 using ECommerce.Application.Services.Admin;
+using ECommerce.API.ExceptionHandling;
+using Scalar.AspNetCore;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,7 +18,33 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        var securityScheme = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            In = ParameterLocation.Header,
+            Scheme = "bearer"
+        };
+        OpenApiComponents components = document.Components ?? new OpenApiComponents();
+        components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+        components.SecuritySchemes.Add(JwtBearerDefaults.AuthenticationScheme, securityScheme);
+        document.Components = components;
+
+        var referenceScheme = new OpenApiSecuritySchemeReference(JwtBearerDefaults.AuthenticationScheme, document);
+
+        var security = document.Security ?? [];
+        security.Add(new OpenApiSecurityRequirement
+        {
+            [referenceScheme] = []
+        });
+        document.Security = security;
+
+        return Task.CompletedTask;
+    });
+});
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlServer(connectionString));
@@ -52,11 +81,22 @@ builder.Services.AddScoped<IPaymentService, StripePaymentService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy.WithOrigins(builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()?? throw new InvalidOperationException("AllowedOrigins configuration is missing or invalid."))
+               .AllowAnyHeader()
+               .AllowAnyMethod();
+    });
+});
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 
 
 var app = builder.Build();
+app.UseExceptionHandler();
 using (var scope = app.Services.CreateScope())
 {
     await IdentitySeeder.SeedAsync(scope.ServiceProvider);
@@ -67,10 +107,11 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();
-
+app.UseCors("FrontendPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 

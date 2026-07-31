@@ -1,3 +1,7 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace ECommerce.Application.DTOs.Categories;
 
-public sealed record UpdateCategoryDto(string Name, int DisplayOrder);
+public sealed record UpdateCategoryDto(
+    [Required, MaxLength(100)] string Name,
+    [Range(0, int.MaxValue)] int DisplayOrder);

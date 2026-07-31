@@ -1,6 +1,7 @@
 using ECommerce.Application.DTOs.Orders;
 using ECommerce.Application.Services.Carts;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 namespace ECommerce.Application.Services.Orders;
 
 public class OrderService : IOrderService
@@ -10,14 +11,16 @@ public class OrderService : IOrderService
     private readonly IOrderRepository _orderRepository;
     private readonly IPaymentService _paymentService;
     private readonly ICartRepository _cartRepository;
+    private readonly ILogger<OrderService> _logger;
 
-    public OrderService(IOrderRepository orderRepository, IPaymentService paymentService, ICartRepository cartRepository, IConfiguration configuration, ICartService cartService)
+    public OrderService(IOrderRepository orderRepository, IPaymentService paymentService, ICartRepository cartRepository, IConfiguration configuration, ICartService cartService, ILogger<OrderService> logger)
     {
         _orderRepository = orderRepository;
         _paymentService = paymentService;
         _cartRepository = cartRepository;
         _configuration = configuration;
         _cartService = cartService;
+        _logger = logger;
     }
 
     public async Task<CheckoutResponseDto> CreateCheckoutSessionAsync(string userId, CreateOrderDto createOrderDto)
@@ -70,6 +73,7 @@ public class OrderService : IOrderService
         order.StripeSessionId = result.SessionId;
         _orderRepository.Update(order);
         await _orderRepository.SaveChangesAsync();
+        _logger.LogInformation("Checkout session created for order {OrderId} by user {UserId}", order.Id, userId);
         return new CheckoutResponseDto(result.CheckoutUrl);
     }
 
@@ -87,6 +91,7 @@ public class OrderService : IOrderService
         order.Status = OrderStatus.Paid;
         _orderRepository.Update(order);
         await _orderRepository.SaveChangesAsync();
+        _logger.LogInformation("Order {OrderId} marked as paid", order.Id);
         var cart = await _cartRepository.GetCartByUserIdAsync(order.UserId);
         if (cart != null)
         {
@@ -128,6 +133,7 @@ public class OrderService : IOrderService
         order.Status = newStatus;
         _orderRepository.Update(order);
         await _orderRepository.SaveChangesAsync();
+        _logger.LogInformation("Order {OrderId} status updated to {NewStatus}", order.Id, newStatus);
         return new OrderDto(
             order.Id,
             order.UserId,

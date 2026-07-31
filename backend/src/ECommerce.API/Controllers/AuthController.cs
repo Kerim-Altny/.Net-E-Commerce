@@ -11,11 +11,13 @@ public class AuthController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(UserManager<ApplicationUser> userManager, IConfiguration configuration)
+    public AuthController(UserManager<ApplicationUser> userManager, IConfiguration configuration, ILogger<AuthController> logger)
     {
         _userManager = userManager;
         _configuration = configuration;
+        _logger = logger;
     }
 
     [HttpPost("register")]
@@ -71,8 +73,10 @@ public class AuthController : ControllerBase
                 expires: DateTime.UtcNow.AddHours(2),
                 signingCredentials: signingCredentials
             );
+            _logger.LogInformation("User {UserId} logged in successfully", user.Id);
             return Ok(new { Token = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().WriteToken(token) });
         }
+        _logger.LogWarning("Failed login attempt for email {Email}", request.Email);
         return Unauthorized(new { Message = "Invalid credentials" });
     }
 

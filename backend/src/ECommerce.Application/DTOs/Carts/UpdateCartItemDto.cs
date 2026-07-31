@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace ECommerce.Application.DTOs.Carts;
 
-public sealed record UpdateCartItemDto(int Quantity);
+public sealed record UpdateCartItemDto([Range(1, int.MaxValue)] int Quantity);
