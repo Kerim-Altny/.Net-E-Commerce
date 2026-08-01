@@ -1,10 +1,33 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import axiosClient from '../../api/axiosClient';
+import { getErrorMessage } from '../../utils/getErrorMessage';
+import type { Product } from '../../types/Product';
 
 export default function ProductList() {
-  const products = [
-    { id: 1, title: 'The Great Gatsby', isbn: '978-0743273565', price: 12.00, author: 'F. Scott Fitzgerald', category: 'Classic' },
-    { id: 2, title: '1984', isbn: '978-0451524935', price: 15.00, author: 'George Orwell', category: 'Dystopian' }
-  ];
+  const [products, setProducts] = useState<Product[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadProducts = () => {
+    axiosClient
+      .get<Product[]>('/api/products', { params: { pageNumber: 1, pageSize: 100 } })
+      .then((res) => setProducts(res.data))
+      .catch(() => setError('Ürünler yüklenirken bir hata oluştu.'));
+  };
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Bu ürünü silmek istediğinizden emin misiniz?')) return;
+    try {
+      await axiosClient.delete(`/api/products/${id}`);
+      loadProducts();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Ürün silinirken bir hata oluştu.'));
+    }
+  };
 
   return (
     <div className="container-fluid py-4">
@@ -18,6 +41,7 @@ export default function ProductList() {
             <i className="bi bi-plus-lg"></i> New Product
           </Link>
         </div>
+        {error && <div className="alert alert-danger m-3 mb-0">{error}</div>}
         <div className="table-responsive p-3">
           <table className="table table-striped table-hover table-styled">
             <thead>
@@ -37,12 +61,12 @@ export default function ProductList() {
                   <td>{product.isbn}</td>
                   <td>${product.price.toFixed(2)}</td>
                   <td>{product.author}</td>
-                  <td>{product.category}</td>
+                  <td>{product.category.name}</td>
                   <td className="text-end">
                     <Link to={`/admin/product/upsert/${product.id}`} className="btn btn-sm btn-outline-success me-1">
                       <i className="bi bi-pencil-square"></i>
                     </Link>
-                    <button className="btn btn-sm btn-outline-danger">
+                    <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(product.id)}>
                       <i className="bi bi-trash"></i>
                     </button>
                   </td>

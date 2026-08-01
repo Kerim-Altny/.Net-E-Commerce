@@ -5,10 +5,12 @@ namespace ECommerce.Application.Services.Categories;
 public class CategoryService : ICategoryService
 {
     private readonly ICategoryRepository _categoryRepository;
+    private readonly IProductRepository _productRepository;
 
-    public CategoryService(ICategoryRepository categoryRepository)
+    public CategoryService(ICategoryRepository categoryRepository, IProductRepository productRepository)
     {
         _categoryRepository = categoryRepository;
+        _productRepository = productRepository;
     }
 
     public async Task<IEnumerable<CategoryDto>> GetAllCategoriesAsync()
@@ -59,6 +61,11 @@ public class CategoryService : ICategoryService
         if (category == null)
         {
             throw new KeyNotFoundException($"Category with ID {id} not found.");
+        }
+        var productsInCategory = await _productRepository.GetProductsByCategoryAsync(id);
+        if (productsInCategory.Any())
+        {
+            throw new InvalidOperationException($"Cannot delete category '{category.Name}' because it has associated products.");
         }
         _categoryRepository.Delete(category);
         await _categoryRepository.SaveChangesAsync();

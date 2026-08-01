@@ -1,11 +1,33 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import axiosClient from '../../api/axiosClient';
+import { getErrorMessage } from '../../utils/getErrorMessage';
+import type { Category } from '../../types/Category';
 
 export default function CategoryList() {
-  const categories = [
-    { id: 1, name: 'Action', displayOrder: 1 },
-    { id: 2, name: 'Sci-Fi', displayOrder: 2 },
-    { id: 3, name: 'History', displayOrder: 3 },
-  ];
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadCategories = () => {
+    axiosClient
+      .get<Category[]>('/api/categories')
+      .then((res) => setCategories(res.data))
+      .catch(() => setError('Kategoriler yüklenirken bir hata oluştu.'));
+  };
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const handleDelete = async (id: number) => {
+    if (!window.confirm('Bu kategoriyi silmek istediğinizden emin misiniz?')) return;
+    try {
+      await axiosClient.delete(`/api/categories/${id}`);
+      loadCategories();
+    } catch (err) {
+      setError(getErrorMessage(err, 'Kategori silinirken bir hata oluştu.'));
+    }
+  };
 
   return (
     <div className="container-fluid py-4">
@@ -19,6 +41,7 @@ export default function CategoryList() {
             <i className="bi bi-plus-lg"></i> New Category
           </Link>
         </div>
+        {error && <div className="alert alert-danger m-3 mb-0">{error}</div>}
         <div className="table-responsive">
           <table className="table-styled table">
             <thead>
@@ -37,7 +60,7 @@ export default function CategoryList() {
                     <Link to={`/admin/category/update/${category.id}`} className="btn btn-sm btn-outline-success me-1">
                       <i className="bi bi-pencil-square me-1"></i>Edit
                     </Link>
-                    <button className="btn btn-sm btn-outline-danger">
+                    <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(category.id)}>
                       <i className="bi bi-trash me-1"></i>Delete
                     </button>
                   </td>

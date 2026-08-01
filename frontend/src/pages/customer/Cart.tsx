@@ -1,35 +1,77 @@
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import axiosClient from '../../api/axiosClient';
+import { isAuthenticated } from '../../utils/auth';
+import { getErrorMessage } from '../../utils/getErrorMessage';
+import type { Cart as CartData } from '../../types/Cart';
 
 export default function Cart() {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      product: {
-        title: 'The Great Gatsby',
-        author: 'F. Scott Fitzgerald',
-        imageUrl: ''
-      },
-      price: 12.00,
-      count: 2
-    }
-  ]);
+  const navigate = useNavigate();
+  const [cart, setCart] = useState<CartData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [shippingFullName, setShippingFullName] = useState('');
+  const [shippingPhoneNumber, setShippingPhoneNumber] = useState('');
+  const [shippingStreet, setShippingStreet] = useState('');
+  const [shippingCity, setShippingCity] = useState('');
+  const [shippingState, setShippingState] = useState('');
+  const [shippingPostalCode, setShippingPostalCode] = useState('');
 
-  const orderTotal = cartItems.reduce((acc, item) => acc + (item.price * item.count), 0);
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate('/identity/login');
+      return;
+    }
+    axiosClient
+      .get<CartData>('/api/cart')
+      .then((res) => setCart(res.data))
+      .catch(() => setError('Sepet yüklenirken bir hata oluştu.'));
+  }, [navigate]);
+
+  const cartItems = cart?.items ?? [];
+  const orderTotal = cart?.total ?? 0;
   const itemCount = cartItems.length;
 
-  const updateCart = (id: number, count: number) => {
-    if (count < 1) return;
-    setCartItems(cartItems.map(item => item.id === id ? { ...item, count } : item));
+  const updateCart = async (productId: number, quantity: number) => {
+    if (quantity < 1) return;
+    try {
+      const res = await axiosClient.put<CartData>(`/api/cart/items/${productId}`, { quantity });
+      setCart(res.data);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Sepet güncellenirken bir hata oluştu.'));
+    }
   };
 
-  const removeItem = (id: number) => {
-    setCartItems(cartItems.filter(item => item.id !== id));
+  const removeItem = async (productId: number) => {
+    try {
+      const res = await axiosClient.delete<CartData>(`/api/cart/items/${productId}`);
+      setCart(res.data);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Ürün sepetten çıkarılırken bir hata oluştu.'));
+    }
+  };
+
+  const handlePlaceOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      const res = await axiosClient.post<{ checkoutUrl: string }>('/api/orders/checkout', {
+        shippingFullName,
+        shippingPhoneNumber,
+        shippingStreet,
+        shippingCity,
+        shippingState,
+        shippingPostalCode,
+      });
+      window.location.href = res.data.checkoutUrl;
+    } catch (err) {
+      setError(getErrorMessage(err, 'Sipariş oluşturulurken bir hata oluştu.'));
+    }
   };
 
   return (
     <div className="container py-4" style={{ maxWidth: '1140px' }}>
-      <form onSubmit={(e) => e.preventDefault()}>
+      {error && <div className="alert alert-danger">{error}</div>}
+      <form onSubmit={handlePlaceOrder}>
         <Link to="/" className="text-decoration-none text-secondary small fw-medium d-inline-flex align-items-center gap-1 mb-3">
           <i className="bi bi-arrow-left"></i> Continue Shopping
         </Link>
@@ -55,8 +97,8 @@ export default function Cart() {
                       {/* Thumbnail */}
                       <Link to="#" className="flex-shrink-0">
                         <div className="rounded overflow-hidden" style={{ width: '56px', height: '72px' }}>
-                          {item.product.imageUrl ? (
-                            <img src={item.product.imageUrl} className="w-100 h-100" alt="Product" />
+                          {item.imageUrl ? (
+                            <img src={item.imageUrl} className="w-100 h-100" alt="Product" />
                           ) : (
                             <img src="https://placehold.co/56x72" className="w-100 h-100" style={{ objectFit: 'cover' }} alt="Product" />
                           )}
@@ -66,26 +108,26 @@ export default function Cart() {
                       {/* Info */}
                       <div className="flex-grow-1" style={{ minWidth: 0 }}>
                         <Link to="#" className="fw-semibold text-decoration-none d-block text-truncate" style={{ fontSize: '0.85rem' }}>
-                          {item.product.title}
+                          {item.productTitle}
                         </Link>
-                        <p className="text-secondary mb-2" style={{ fontSize: '0.7rem' }}>by {item.product.author} &middot; ${item.price.toFixed(2)} each</p>
+                        <p className="text-secondary mb-2" style={{ fontSize: '0.7rem' }}>${item.unitPrice.toFixed(2)} each</p>
 
                         <div className="d-flex align-items-center gap-2">
                           <div className="input-group" style={{ width: '130px' }}>
-                            <button type="button" className="btn btn-outline-secondary btn-sm px-2" onClick={() => updateCart(item.id, item.count - 1)}><i className="bi bi-dash"></i></button>
-                            <input type="number" value={item.count} min="1"
+                            <button type="button" className="btn btn-outline-secondary btn-sm px-2" onClick={() => updateCart(item.productId, item.quantity - 1)}><i className="bi bi-dash"></i></button>
+                            <input type="number" value={item.quantity} min="1"
                               className="form-control form-control-sm text-center fw-bold"
                               style={{ minWidth: '52px' }}
-                              onChange={(e) => updateCart(item.id, parseInt(e.target.value))} />
-                            <button type="button" className="btn btn-outline-success btn-sm px-2" onClick={() => updateCart(item.id, item.count + 1)}><i className="bi bi-plus-lg"></i></button>
+                              onChange={(e) => updateCart(item.productId, parseInt(e.target.value))} />
+                            <button type="button" className="btn btn-outline-success btn-sm px-2" onClick={() => updateCart(item.productId, item.quantity + 1)}><i className="bi bi-plus-lg"></i></button>
                           </div>
                         </div>
                       </div>
 
                       {/* Price + Remove */}
                       <div className="text-end flex-shrink-0 d-flex flex-column justify-content-between align-self-stretch">
-                        <span className="fw-bold" style={{ fontSize: '0.9rem' }}>${(item.price * item.count).toFixed(2)}</span>
-                        <button type="button" onClick={() => removeItem(item.id)} className="btn btn-link text-danger text-decoration-none p-0 d-inline-flex align-items-center gap-1" style={{ fontSize: '0.7rem' }}>
+                        <span className="fw-bold" style={{ fontSize: '0.9rem' }}>${item.lineTotal.toFixed(2)}</span>
+                        <button type="button" onClick={() => removeItem(item.productId)} className="btn btn-link text-danger text-decoration-none p-0 d-inline-flex align-items-center gap-1" style={{ fontSize: '0.7rem' }}>
                           <i className="bi bi-trash3"></i> Remove
                         </button>
                       </div>
@@ -107,27 +149,27 @@ export default function Cart() {
                   </h6>
                   <div className="row g-2 mb-2">
                     <div className="col-6">
-                      <input className="form-control form-control-sm" placeholder="Full Name" />
+                      <input className="form-control form-control-sm" placeholder="Full Name" value={shippingFullName} onChange={e => setShippingFullName(e.target.value)} required />
                     </div>
                     <div className="col-6">
-                      <input className="form-control form-control-sm" placeholder="Phone" />
+                      <input className="form-control form-control-sm" placeholder="Phone" value={shippingPhoneNumber} onChange={e => setShippingPhoneNumber(e.target.value)} required />
                     </div>
                   </div>
                   <h6 className="fw-bold mb-3 d-flex align-items-center gap-2 pt-3">
                     <i className="bi bi-geo-alt" style={{ color: '#17A34A' }}></i> Shipping Address
                   </h6>
                   <div className="mb-2">
-                    <input className="form-control form-control-sm" placeholder="Street Address" />
+                    <input className="form-control form-control-sm" placeholder="Street Address" value={shippingStreet} onChange={e => setShippingStreet(e.target.value)} required />
                   </div>
                   <div className="row g-2">
                     <div className="col-5">
-                      <input className="form-control form-control-sm" placeholder="City" />
+                      <input className="form-control form-control-sm" placeholder="City" value={shippingCity} onChange={e => setShippingCity(e.target.value)} required />
                     </div>
                     <div className="col-3">
-                      <input className="form-control form-control-sm" placeholder="State" />
+                      <input className="form-control form-control-sm" placeholder="State" value={shippingState} onChange={e => setShippingState(e.target.value)} required />
                     </div>
                     <div className="col-4">
-                      <input className="form-control form-control-sm" placeholder="Zip Code" />
+                      <input className="form-control form-control-sm" placeholder="Zip Code" value={shippingPostalCode} onChange={e => setShippingPostalCode(e.target.value)} required />
                     </div>
                   </div>
                 </div>
@@ -141,8 +183,8 @@ export default function Cart() {
                   </h6>
                   {cartItems.map(item => (
                     <div key={item.id} className="d-flex justify-content-between mb-1" style={{ fontSize: '0.8rem' }}>
-                      <span className="text-secondary text-truncate me-2">{item.product.title} &times; {item.count}</span>
-                      <span className="fw-medium flex-shrink-0">${(item.price * item.count).toFixed(2)}</span>
+                      <span className="text-secondary text-truncate me-2">{item.productTitle} &times; {item.quantity}</span>
+                      <span className="fw-medium flex-shrink-0">${item.lineTotal.toFixed(2)}</span>
                     </div>
                   ))}
                   <hr className="my-2" />

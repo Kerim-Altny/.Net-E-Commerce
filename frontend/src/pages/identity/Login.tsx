@@ -1,6 +1,30 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axiosClient from '../../api/axiosClient';
+import { saveAuth } from '../../utils/auth';
+import { getErrorMessage } from '../../utils/getErrorMessage';
 
 export default function Login() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    try {
+      const res = await axiosClient.post<{ token: string; roles: string[] }>('/api/auth/login', {
+        email,
+        password,
+      });
+      saveAuth(res.data.token, res.data.roles);
+      navigate('/');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Giriş başarısız. Bilgilerinizi kontrol edin.'));
+    }
+  };
+
   return (
     <div className="container">
       <div className="row justify-content-center mt-5">
@@ -13,15 +37,16 @@ export default function Login() {
             </div>
 
             <div className="card-body p-5">
-              <form onSubmit={e => e.preventDefault()}>
+              {error && <div className="alert alert-danger">{error}</div>}
+              <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                   <label className="form-label">Email</label>
-                  <input type="email" className="form-control form-control-lg" placeholder="name@example.com" />
+                  <input type="email" className="form-control form-control-lg" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
                 </div>
 
                 <div className="mb-3">
                   <label className="form-label">Password</label>
-                  <input type="password" className="form-control form-control-lg" placeholder="••••••••" />
+                  <input type="password" className="form-control form-control-lg" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
                 </div>
 
                 <div className="form-check mb-3">

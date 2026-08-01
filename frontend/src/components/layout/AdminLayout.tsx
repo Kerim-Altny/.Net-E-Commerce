@@ -1,6 +1,14 @@
-import { Link, Outlet } from 'react-router-dom';
+import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { logout } from '../../utils/auth';
 
 export default function AdminLayout() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
     <>
       <div className="d-lg-none sticky-top border-bottom" style={{ background: '#191414', borderColor: 'rgba(255,255,255,0.1) !important' }}>
@@ -47,7 +55,7 @@ export default function AdminLayout() {
               <Link to="/" className="btn btn-sm btn-outline-light flex-grow-1">
                 <i className="bi bi-shop"></i> Store
               </Link>
-              <button type="button" className="btn btn-sm btn-outline-danger" title="Logout">
+              <button type="button" className="btn btn-sm btn-outline-danger" title="Logout" onClick={handleLogout}>
                 <i className="bi bi-box-arrow-right"></i>
               </button>
             </div>

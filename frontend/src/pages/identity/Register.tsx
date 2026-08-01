@@ -1,6 +1,52 @@
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axiosClient from '../../api/axiosClient';
+import { saveAuth } from '../../utils/auth';
+import { getErrorMessage } from '../../utils/getErrorMessage';
 
 export default function Register() {
+  const navigate = useNavigate();
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [streetAddress, setStreetAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    if (password !== confirmPassword) {
+      setError('Şifreler eşleşmiyor.');
+      return;
+    }
+
+    try {
+      await axiosClient.post('/api/auth/register', {
+        email,
+        password,
+        fullName,
+        streetAddress,
+        city,
+        state,
+        postalCode,
+      });
+
+      const loginRes = await axiosClient.post<{ token: string; roles: string[] }>('/api/auth/login', {
+        email,
+        password,
+      });
+      saveAuth(loginRes.data.token, loginRes.data.roles);
+      navigate('/');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Kayıt sırasında bir hata oluştu.'));
+    }
+  };
+
   return (
     <div className="container mb-4">
       <div className="row justify-content-center mt-5 mb-5">
@@ -13,55 +59,51 @@ export default function Register() {
             </div>
 
             <div className="card-body p-5">
-              <form onSubmit={e => e.preventDefault()}>
+              {error && <div className="alert alert-danger">{error}</div>}
+              <form onSubmit={handleSubmit}>
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Full Name</label>
-                    <input className="form-control form-control-lg" placeholder="John Doe" />
+                    <input className="form-control form-control-lg" placeholder="John Doe" value={fullName} onChange={e => setFullName(e.target.value)} required />
                   </div>
 
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Email</label>
-                    <input type="email" className="form-control form-control-lg" placeholder="name@example.com" />
+                    <input type="email" className="form-control form-control-lg" placeholder="name@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
                   </div>
                 </div>
 
                 <div className="row">
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Password</label>
-                    <input type="password" className="form-control" placeholder="••••••••" />
+                    <input type="password" className="form-control" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
                   </div>
 
                   <div className="col-md-6 mb-3">
                     <label className="form-label">Confirm Password</label>
-                    <input type="password" className="form-control" placeholder="••••••••" />
+                    <input type="password" className="form-control" placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
                   </div>
                 </div>
 
                 <div className="mb-3">
-                  <label className="form-label">Phone Number</label>
-                  <input type="text" className="form-control" placeholder="(123) 456-7890" />
-                </div>
-
-                <div className="mb-3">
                   <label className="form-label">Street Address</label>
-                  <input type="text" className="form-control" placeholder="123 Main St" />
+                  <input type="text" className="form-control" placeholder="123 Main St" value={streetAddress} onChange={e => setStreetAddress(e.target.value)} required />
                 </div>
 
                 <div className="row">
                   <div className="col-md-5 mb-3">
                     <label className="form-label">City</label>
-                    <input type="text" className="form-control" placeholder="New York" />
+                    <input type="text" className="form-control" placeholder="New York" value={city} onChange={e => setCity(e.target.value)} required />
                   </div>
 
                   <div className="col-md-4 mb-3">
                     <label className="form-label">State</label>
-                    <input type="text" className="form-control" placeholder="NY" />
+                    <input type="text" className="form-control" placeholder="NY" value={state} onChange={e => setState(e.target.value)} required />
                   </div>
 
                   <div className="col-md-3 mb-3">
                     <label className="form-label">Postal Code</label>
-                    <input type="text" className="form-control" placeholder="10001" />
+                    <input type="text" className="form-control" placeholder="10001" value={postalCode} onChange={e => setPostalCode(e.target.value)} required />
                   </div>
                 </div>
 

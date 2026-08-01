@@ -1,44 +1,18 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import axiosClient from '../../api/axiosClient';
+import type { Product } from '../../types/Product';
 
 export default function Home() {
-  const products = [
-    {
-      id: 1,
-      title: 'The Great Gatsby',
-      author: 'F. Scott Fitzgerald',
-      price100: 9.99,
-      listPrice: 15.99,
-      imageUrl: '',
-      category: { name: 'Classic' },
-    },
-    {
-      id: 2,
-      title: '1984',
-      author: 'George Orwell',
-      price100: 12.99,
-      listPrice: 19.99,
-      imageUrl: '',
-      category: { name: 'Dystopian' },
-    },
-    {
-      id: 3,
-      title: 'To Kill a Mockingbird',
-      author: 'Harper Lee',
-      price100: 14.50,
-      listPrice: 18.00,
-      imageUrl: '',
-      category: { name: 'Fiction' },
-    },
-    {
-      id: 4,
-      title: 'Pride and Prejudice',
-      author: 'Jane Austen',
-      price100: 8.99,
-      listPrice: 12.50,
-      imageUrl: '',
-      category: { name: 'Romance' },
-    },
-  ];
+  const [products, setProducts] = useState<Product[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    axiosClient
+      .get<Product[]>('/api/products', { params: { pageNumber: 1, pageSize: 20 } })
+      .then((res) => setProducts(res.data))
+      .catch(() => setError('Kitaplar yüklenirken bir hata oluştu.'));
+  }, []);
 
   return (
     <>
@@ -126,6 +100,8 @@ export default function Home() {
           <p className="text-secondary mb-0">Explore all {products.length} books in our catalog</p>
         </div>
 
+        {error && <div className="alert alert-danger">{error}</div>}
+
         {products.length > 0 && (
           <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
             {products.map(product => (
@@ -152,8 +128,8 @@ export default function Home() {
                     <p className="text-secondary small mb-2">by {product.author}</p>
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
-                        <span className="fw-bold text-success">${product.price100.toFixed(2)}</span>
-                        {product.listPrice > product.price100 && (
+                        <span className="fw-bold text-success">${product.price.toFixed(2)}</span>
+                        {product.listPrice > product.price && (
                           <small className="text-decoration-line-through text-muted ms-1">${product.listPrice.toFixed(2)}</small>
                         )}
                       </div>

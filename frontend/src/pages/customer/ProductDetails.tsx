@@ -1,30 +1,47 @@
-import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import axiosClient from '../../api/axiosClient';
+import { isAuthenticated } from '../../utils/auth';
+import type { Product } from '../../types/Product';
 
 export default function ProductDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [count, setCount] = useState(1);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Dummy data based on the ID for frontend visualization
-  const product = {
-    id: Number(id) || 1,
-    title: 'The Great Gatsby',
-    author: 'F. Scott Fitzgerald',
-    isbn: '978-0743273565',
-    description: '<p>The Great Gatsby is a 1925 novel by American writer F. Scott Fitzgerald. Set in the Jazz Age on Long Island, the novel depicts narrator Nick Carraway\'s interactions with mysterious millionaire Jay Gatsby.</p>',
-    listPrice: 15.99,
-    price: 12.00,
-    price50: 10.00,
-    price100: 9.99,
-    imageUrl: '',
-    category: { name: 'Classic' }
-  };
+  useEffect(() => {
+    axiosClient
+      .get<Product>(`/api/products/${id}`)
+      .then((res) => setProduct(res.data))
+      .catch(() => setError('Ürün yüklenirken bir hata oluştu.'));
+  }, [id]);
 
-  const handleAddToCart = (e: React.FormEvent) => {
+  const handleAddToCart = async (e: React.FormEvent) => {
     e.preventDefault();
-    // API logic will go here
-    console.log(`Added ${count} of product ${product.id} to cart.`);
+    if (!product) return;
+
+    if (!isAuthenticated()) {
+      navigate('/identity/login');
+      return;
+    }
+
+    try {
+      await axiosClient.post('/api/cart/items', { productId: product.id, quantity: count });
+      navigate('/cart');
+    } catch {
+      setError('Sepete eklenirken bir hata oluştu.');
+    }
   };
+
+  if (error) {
+    return <div className="container py-4"><div className="alert alert-danger">{error}</div></div>;
+  }
+
+  if (!product) {
+    return <div className="container py-4">Yükleniyor...</div>;
+  }
 
   return (
     <div className="container py-4">
@@ -92,7 +109,7 @@ export default function ProductDetails() {
                 </div>
               </div>
 
-              <div className="text-secondary small mb-4" dangerouslySetInnerHTML={{ __html: product.description }}></div>
+              <div className="text-secondary small mb-4" dangerouslySetInnerHTML={{ __html: product.description ?? '' }}></div>
 
               <div className="d-flex align-items-center gap-2">
                 <div className="input-group" style={{ width: '140px' }}>

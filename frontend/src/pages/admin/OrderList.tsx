@@ -1,15 +1,48 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import axiosClient from '../../api/axiosClient';
+import { getErrorMessage } from '../../utils/getErrorMessage';
+import type { Order } from '../../types/Order';
+
+// UI'daki "approved" etiketi, backend'deki OrderStatus enum'ında "Paid" olarak adlandırılmış.
+const FILTER_TO_STATUS: Record<string, string | undefined> = {
+  all: undefined,
+  pending: 'Pending',
+  approved: 'Paid',
+  processing: 'Processing',
+  shipped: 'Shipped',
+  cancelled: 'Cancelled',
+};
+
+const STATUS_OPTIONS = ['Pending', 'Paid', 'Processing', 'Shipped', 'Cancelled'];
 
 export default function OrderList() {
   const [filter, setFilter] = useState('all');
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const orders = [
-    { id: 1, name: 'John Doe', phone: '123-456-7890', email: 'john@example.com', status: 'approved', total: 45.00 },
-    { id: 2, name: 'Jane Smith', phone: '098-765-4321', email: 'jane@example.com', status: 'pending', total: 12.00 }
-  ];
+  const loadOrders = (currentFilter: string) => {
+    const status = FILTER_TO_STATUS[currentFilter];
+    axiosClient
+      .get<Order[]>('/api/admin/orders', { params: status ? { status } : {} })
+      .then((res) => setOrders(res.data))
+      .catch(() => setError('Siparişler yüklenirken bir hata oluştu.'));
+  };
 
-  const filteredOrders = filter === 'all' ? orders : orders.filter(o => o.status === filter);
+  useEffect(() => {
+    loadOrders(filter);
+  }, [filter]);
+
+  const handleStatusChange = async (orderId: number, newStatus: string) => {
+    try {
+      await axiosClient.put(`/api/admin/orders/${orderId}/status`, { newStatus });
+      loadOrders(filter);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Sipariş durumu güncellenirken bir hata oluştu.'));
+    }
+  };
+
+  const filteredOrders = orders;
 
   const getFilterClass = (status: string) => {
     return filter === status ? 'btn btn-sm text-white bg-success' : 'btn btn-outline-secondary btn-sm';
@@ -33,6 +66,7 @@ export default function OrderList() {
             <button className={getFilterClass('cancelled')} onClick={() => setFilter('cancelled')}>Cancelled</button>
           </div>
         </div>
+        {error && <div className="alert alert-danger m-3 mb-0">{error}</div>}
         <div className="table-responsive p-3">
           <table className="table table-striped table-hover table-styled">
             <thead>
@@ -40,9 +74,9 @@ export default function OrderList() {
                 <th>Id</th>
                 <th>Name</th>
                 <th>Phone</th>
-                <th>Email</th>
                 <th>Status</th>
                 <th>Total</th>
+                <th className="text-end">Update Status</th>
                 <th className="text-end">Actions</th>
               </tr>
             </thead>
@@ -50,11 +84,21 @@ export default function OrderList() {
               {filteredOrders.map(order => (
                 <tr key={order.id}>
                   <td>{order.id}</td>
-                  <td>{order.name}</td>
-                  <td>{order.phone}</td>
-                  <td>{order.email}</td>
-                  <td><span className={`badge ${order.status === 'approved' ? 'bg-success' : 'bg-warning'}`}>{order.status}</span></td>
-                  <td>${order.total.toFixed(2)}</td>
+                  <td>{order.shippingFullName}</td>
+                  <td>{order.shippingPhoneNumber}</td>
+                  <td><span className={`badge ${order.status === 'Paid' ? 'bg-success' : 'bg-warning'}`}>{order.status}</span></td>
+                  <td>${order.totalAmount.toFixed(2)}</td>
+                  <td className="text-end">
+                    <select
+                      className="form-select form-select-sm d-inline-block w-auto"
+                      value={order.status}
+                      onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                    >
+                      {STATUS_OPTIONS.map(status => (
+                        <option key={status} value={status}>{status}</option>
+                      ))}
+                    </select>
+                  </td>
                   <td className="text-end">
                     <Link to={`/admin/order/details/${order.id}`} className="btn btn-sm btn-outline-info">
                       <i className="bi bi-eye"></i> Details

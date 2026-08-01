@@ -51,13 +51,14 @@ public class AuthController : ControllerBase
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user != null && await _userManager.CheckPasswordAsync(user, request.Password))
         {
+            var roles = await _userManager.GetRolesAsync(user);
             List<Claim> claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
                 new Claim(ClaimTypes.Email, user.Email!),
 
             };
-            foreach (var role in await _userManager.GetRolesAsync(user))
+            foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
@@ -74,7 +75,11 @@ public class AuthController : ControllerBase
                 signingCredentials: signingCredentials
             );
             _logger.LogInformation("User {UserId} logged in successfully", user.Id);
-            return Ok(new { Token = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().WriteToken(token) });
+            return Ok(new
+            {
+                Token = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().WriteToken(token),
+                Roles = roles
+            });
         }
         _logger.LogWarning("Failed login attempt for email {Email}", request.Email);
         return Unauthorized(new { Message = "Invalid credentials" });

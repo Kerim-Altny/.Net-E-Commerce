@@ -8,8 +8,8 @@ public sealed record CreateProductDto(
     [Required, MaxLength(20)] string Isbn,
     string? Description,
     [Url] string? ImageUrl,
-    [Range(typeof(decimal), "0.01", "999999")] decimal ListPrice,
-    [Range(typeof(decimal), "0.01", "999999")] decimal Price,
-    [Range(typeof(decimal), "0.01", "999999")] decimal Price50,
-    [Range(typeof(decimal), "0.01", "999999")] decimal Price100,
+    [Range(0.01, 999999)] decimal ListPrice,
+    [Range(0.01, 999999)] decimal Price,
+    [Range(0.01, 999999)] decimal Price50,
+    [Range(0.01, 999999)] decimal Price100,
     [Range(1, int.MaxValue)] int CategoryId);

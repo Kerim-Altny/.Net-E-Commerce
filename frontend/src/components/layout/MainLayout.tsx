@@ -1,6 +1,32 @@
-import { Link, Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import axiosClient from '../../api/axiosClient';
+import { isAuthenticated, hasRole, logout } from '../../utils/auth';
+import type { Cart } from '../../types/Cart';
 
 export default function MainLayout() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const authed = isAuthenticated();
+  const isAdmin = hasRole('Admin');
+  const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    if (!authed) {
+      setCartCount(0);
+      return;
+    }
+    axiosClient
+      .get<Cart>('/api/cart')
+      .then((res) => setCartCount(res.data.items.reduce((sum, item) => sum + item.quantity, 0)))
+      .catch(() => setCartCount(0));
+  }, [authed, location.pathname]);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
     <>
       <header className="sticky-top">
@@ -22,28 +48,33 @@ export default function MainLayout() {
                 <li className="nav-item">
                   <Link className="nav-link" to="/">Home</Link>
                 </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/admin/order">
-                    <i className="bi bi-box-seam me-1"></i> My Orders
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/admin/dashboard">
-                    <i className="bi bi-speedometer2 me-1"></i> Admin Portal
-                  </Link>
-                </li>
+                {isAdmin && (
+                  <li className="nav-item">
+                    <Link className="nav-link" to="/admin/dashboard">
+                      <i className="bi bi-speedometer2 me-1"></i> Admin Portal
+                    </Link>
+                  </li>
+                )}
               </ul>
               <div className="d-flex align-items-center gap-3">
                 <Link className="nav-link" to="/cart">
-                  <i className="bi bi-cart"></i> &nbsp; (0)
+                  <i className="bi bi-cart"></i> &nbsp;({cartCount})
                 </Link>
                 <ul className="navbar-nav">
-                  <li className="nav-item">
-                    <Link className="nav-link" to="/identity/register">Register</Link>
-                  </li>
-                  <li className="nav-item">
-                    <Link className="nav-link" to="/identity/login">Login</Link>
-                  </li>
+                  {authed ? (
+                    <li className="nav-item">
+                      <button type="button" className="nav-link btn btn-link" onClick={handleLogout}>Logout</button>
+                    </li>
+                  ) : (
+                    <>
+                      <li className="nav-item">
+                        <Link className="nav-link" to="/identity/register">Register</Link>
+                      </li>
+                      <li className="nav-item">
+                        <Link className="nav-link" to="/identity/login">Login</Link>
+                      </li>
+                    </>
+                  )}
                 </ul>
               </div>
             </div>
