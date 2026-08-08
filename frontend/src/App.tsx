@@ -5,6 +5,7 @@ import RequireAdmin from './components/RequireAdmin';
 import Home from './pages/customer/Home';
 import ProductDetails from './pages/customer/ProductDetails';
 import Cart from './pages/customer/Cart';
+import OrderSuccess from './pages/customer/OrderSuccess';
 import Dashboard from './pages/admin/Dashboard';
 import CategoryList from './pages/admin/CategoryList';
 import CategoryForm from './pages/admin/CategoryForm';
@@ -24,6 +25,7 @@ function App() {
           <Route index element={<Home />} />
           <Route path="customer/product/:id" element={<ProductDetails />} />
           <Route path="cart" element={<Cart />} />
+          <Route path="order-success" element={<OrderSuccess />} />
           <Route path="identity/login" element={<Login />} />
           <Route path="identity/register" element={<Register />} />
         </Route>
